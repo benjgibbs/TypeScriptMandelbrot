@@ -1,8 +1,9 @@
 var canvas = document.getElementById("mb_canvas");
 var height = parseInt(canvas.getAttribute("height"));
 var width = parseInt(canvas.getAttribute("width"));
-console.log("Width: " + width + ", Height: " + height);
+var mouseDown = null;
 var ctxt = canvas.getContext("2d");
+console.log("Width: " + width + ", Height: " + height);
 var Limit = (function () {
     function Limit(min, max) {
         this.min = min;
@@ -10,10 +11,12 @@ var Limit = (function () {
     }
     return Limit;
 })();
+var xLimits = new Limit(-2.5, 1);
+var yLimits = new Limit(-1, 1);
 function scale(val, limit) {
     return (limit.max - limit.min) / val;
 }
-function draw(xLimits, yLimits) {
+function draw() {
     var max_iterations = 1000;
     var xscale = scale(width, xLimits);
     var yscale = scale(height, yLimits);
@@ -40,6 +43,33 @@ function draw(xLimits, yLimits) {
         }
     }
 }
-var xLimits = new Limit(-2.5, 1);
-var yLimits = new Limit(-1, 1);
-draw(xLimits, yLimits);
+document.onmousedown = function (mouse) {
+    console.log("Mouse down: x: " + mouse.clientX + ", y: " + mouse.clientY);
+    mouseDown = mouse;
+};
+document.onmouseup = function (mouseUp) {
+    console.log("Mouse up: x: " + mouseUp.clientX + ", y: " + mouseUp.clientY);
+    if(!movedEnough(mouseDown, mouseUp)) {
+        return;
+    }
+    resize(mouseUp);
+    draw();
+};
+function min(x, y) {
+    return x < y ? x : y;
+}
+function max(x, y) {
+    return x > y ? x : y;
+}
+function resize(mouseUp) {
+    var zoomStart = min(mouseDown.clientX, mouseUp.clientX);
+    var zoomStop = max(mouseDown.clientX, mouseUp.clientX);
+    var newMin = (xLimits.max - xLimits.min) * zoomStart / width;
+    var newMax = (xLimits.max - xLimits.min) * zoomStop / width;
+    xLimits = new Limit(newMin, newMax);
+}
+function movedEnough(down, up) {
+    var minMove = 100;
+    return (Math.abs(down.clientX - up.clientX) > minMove && Math.abs(down.clientY - down.clientY) > minMove);
+}
+draw();
